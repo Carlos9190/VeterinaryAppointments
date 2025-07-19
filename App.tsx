@@ -1,28 +1,62 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- */
+import { useState } from "react";
+import { Text, View, StyleSheet, Pressable } from "react-native";
+import Form from "./src/components/Form";
 
-import { NewAppScreen } from '@react-native/new-app-screen';
-import { StatusBar, StyleSheet, useColorScheme, View } from 'react-native';
+const App = () => {
 
-function App() {
-  const isDarkMode = useColorScheme() === 'dark';
+  const [visibleModal, setVisibleModal] = useState(false)
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
-      <NewAppScreen templateFileName="App.tsx" />
+      <Text style={styles.boldtitle}>Veterinary {''}
+        <Text style={styles.title}>Appointment Manager</Text>
+      </Text>
+
+      <Pressable
+        style={styles.btnNewAppointment}
+        onPress={() => setVisibleModal(!visibleModal)}
+      >
+        <Text style={styles.btnNewAppointmentText}>New appointment</Text>
+      </Pressable>
+
+      <Form
+        visibleModal={visibleModal}
+        setVisibleModal={setVisibleModal}
+      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    paddingTop: 20,
+    backgroundColor: '#F3F4F6',
+    flex: 1
   },
-});
+  title: {
+    color: '#374151',
+    fontWeight: '600'
+  },
+  boldtitle: {
+    textAlign: 'center',
+    fontSize: 30,
+    fontWeight: '900',
+    color: '#6D28D9'
+  },
+  btnNewAppointment: {
+    backgroundColor: '#6D28D9',
+    padding: 15,
+    marginTop: 30,
+    marginHorizontal: 20,
+    borderRadius: 10
+  },
+  btnNewAppointmentText: {
+    textAlign: 'center',
+    color: '#FFF',
+    fontSize: 18,
+    fontWeight: '900',
+    textTransform: 'uppercase'
+  }
+})
 
 export default App;
