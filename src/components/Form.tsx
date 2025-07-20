@@ -1,14 +1,18 @@
-import { useState } from "react";
-import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { useEffect, useState } from "react";
+import { Alert, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import DatePicker from "react-native-date-picker";
+import { patientType } from "../types";
 
 interface FormProps {
     visibleModal: boolean
     setVisibleModal: React.Dispatch<React.SetStateAction<boolean>>
+    patients: patientType[]
+    setPatients: React.Dispatch<React.SetStateAction<patientType[]>>
+    patient: patientType
 }
 
-export default function Form({ visibleModal, setVisibleModal }: FormProps) {
-
+export default function Form({ visibleModal, setVisibleModal, patients, setPatients, patient: patientObj }: FormProps) {
+    const [id, setId] = useState('')
     const [patient, setPatient] = useState('')
     const [owner, setOwner] = useState('')
     const [email, setEmail] = useState('')
@@ -16,20 +20,79 @@ export default function Form({ visibleModal, setVisibleModal }: FormProps) {
     const [date, setDate] = useState(new Date())
     const [symptoms, setSymptoms] = useState('')
 
+    useEffect(() => {
+        if (Object.keys(patientObj).length > 0) {
+            setId(patientObj.id)
+            setPatient(patientObj.patient)
+            setOwner(patientObj.owner)
+            setEmail(patientObj.email)
+            setPhone(patientObj.phone)
+            setDate(new Date(patientObj.date))
+            setSymptoms(patientObj.symptoms)
+        } else {
+            resetForm()
+        }
+    }, [patientObj])
+
+    const resetForm = () => {
+        setId('')
+        setPatient('')
+        setOwner('')
+        setEmail('')
+        setPhone('')
+        setDate(new Date())
+        setSymptoms('')
+    }
+
+    const handleAppointment = () => {
+        if ([patient, owner, email, phone, symptoms].some(field => field.trim() === '')) {
+            Alert.alert(
+                "Error",
+                "All fields are required"
+            )
+            return
+        }
+
+        const newPatient: patientType = {
+            id: id || Date.now().toString(),
+            patient,
+            owner,
+            email,
+            phone,
+            date,
+            symptoms
+        }
+
+        if (id) {
+            // Edit register
+            const updatedPatient = patients.map(patientState =>
+                patientState.id === id ? newPatient : patientState
+            )
+            setPatients(updatedPatient)
+        } else {
+            // New register
+            setPatients([...patients, newPatient])
+        }
+
+        setVisibleModal(false)
+        resetForm()
+    }
+
     return (
-        <Modal
-            animationType='slide'
-            visible={visibleModal}
-        >
-            <View style={styles.content}>
+        <Modal animationType="slide" visible={visibleModal}>
+            <View style={styles.container}>
                 <ScrollView>
-                    <Text style={styles.title}>New {''}
-                        <Text style={styles.boldtitle}>appointment</Text>
+                    <Text style={styles.title}>
+                        {id ? "Edit" : "New"} {''}
+                        <Text style={styles.boldtitle}>Appointment</Text>
                     </Text>
 
                     <Pressable
                         style={styles.btnReturn}
-                        onLongPress={() => setVisibleModal(!visibleModal)}
+                        onLongPress={() => {
+                            setVisibleModal(false)
+                            resetForm()
+                        }}
                     >
                         <Text style={styles.btnReturnText}>Back to appointments</Text>
                     </Pressable>
@@ -39,7 +102,7 @@ export default function Form({ visibleModal, setVisibleModal }: FormProps) {
                         <TextInput
                             style={styles.input}
                             placeholder="Patient name"
-                            placeholderTextColor={'#666'}
+                            placeholderTextColor="#666"
                             value={patient}
                             onChangeText={setPatient}
                         />
@@ -50,7 +113,7 @@ export default function Form({ visibleModal, setVisibleModal }: FormProps) {
                         <TextInput
                             style={styles.input}
                             placeholder="Owner name"
-                            placeholderTextColor={'#666'}
+                            placeholderTextColor="#666"
                             value={owner}
                             onChangeText={setOwner}
                         />
@@ -61,7 +124,7 @@ export default function Form({ visibleModal, setVisibleModal }: FormProps) {
                         <TextInput
                             style={styles.input}
                             placeholder="Owner email"
-                            placeholderTextColor={'#666'}
+                            placeholderTextColor="#666"
                             keyboardType="email-address"
                             value={email}
                             onChangeText={setEmail}
@@ -73,7 +136,7 @@ export default function Form({ visibleModal, setVisibleModal }: FormProps) {
                         <TextInput
                             style={styles.input}
                             placeholder="Owner phone"
-                            placeholderTextColor={'#666'}
+                            placeholderTextColor="#666"
                             keyboardType="number-pad"
                             value={phone}
                             onChangeText={setPhone}
@@ -82,13 +145,12 @@ export default function Form({ visibleModal, setVisibleModal }: FormProps) {
                     </View>
 
                     <View style={styles.field}>
-                        <Text style={styles.label}>Admission Date</Text>
-
+                        <Text style={styles.label}>Admission date</Text>
                         <View style={styles.dateContainer}>
                             <DatePicker
                                 date={date}
                                 mode="date"
-                                onDateChange={date => setDate(date)}
+                                onDateChange={setDate}
                             />
                         </View>
                     </View>
@@ -98,18 +160,24 @@ export default function Form({ visibleModal, setVisibleModal }: FormProps) {
                         <TextInput
                             style={styles.input}
                             placeholder="Patient symptoms"
-                            placeholderTextColor={'#666'}
+                            placeholderTextColor="#666"
                             value={symptoms}
                             onChangeText={setSymptoms}
-                            multiline={true}
+                            multiline
                             numberOfLines={4}
                         />
                     </View>
 
                     <Pressable
                         style={styles.btnNewAppointment}
+                        onPress={() => {
+                            handleAppointment()
+                            resetForm()
+                        }}
                     >
-                        <Text style={styles.btnNewAppointmentText}>Register patient</Text>
+                        <Text style={styles.btnNewAppointmentText}>
+                            {id ? "Edit" : "Register"} patient
+                        </Text>
                     </Pressable>
                 </ScrollView>
             </View>
@@ -118,47 +186,47 @@ export default function Form({ visibleModal, setVisibleModal }: FormProps) {
 }
 
 const styles = StyleSheet.create({
-    content: {
-        backgroundColor: '#6D28D9',
+    container: {
+        backgroundColor: "#6D28D9",
         flex: 1
     },
     title: {
         fontSize: 30,
-        fontWeight: '600',
-        textAlign: 'center',
+        fontWeight: "600",
+        textAlign: "center",
         marginTop: 30,
-        color: '#FFF'
+        color: "#FFF"
     },
     boldtitle: {
-        fontWeight: '900'
+        fontWeight: "900"
     },
     btnReturn: {
         marginVertical: 30,
-        backgroundColor: '#5827A4',
+        backgroundColor: "#5827A4",
         marginHorizontal: 30,
         padding: 15,
         borderRadius: 10
     },
     btnReturnText: {
-        color: '#FFF',
-        textAlign: 'center',
-        fontWeight: '900',
+        color: "#FFF",
+        textAlign: "center",
+        fontWeight: "900",
         fontSize: 16,
-        textTransform: 'uppercase'
+        textTransform: "uppercase"
     },
     field: {
         marginTop: 10,
         marginHorizontal: 30
     },
     label: {
-        color: '#FFF',
+        color: "#FFF",
         marginBottom: 10,
         marginTop: 15,
         fontSize: 20,
-        fontWeight: '600'
+        fontWeight: "600"
     },
     input: {
-        backgroundColor: '#FFF',
+        backgroundColor: "#FFF",
         padding: 15,
         borderRadius: 10
     },
@@ -167,21 +235,21 @@ const styles = StyleSheet.create({
         marginBottom: 10
     },
     dateContainer: {
-        backgroundColor: '#FFF',
+        backgroundColor: "#FFF",
         borderRadius: 10
     },
     btnNewAppointment: {
         marginVertical: 50,
-        backgroundColor: '#F59E0B',
+        backgroundColor: "#F59E0B",
         paddingVertical: 15,
         marginHorizontal: 30,
         borderRadius: 10
     },
     btnNewAppointmentText: {
-        color: '#5827A4',
-        textAlign: 'center',
-        fontWeight: '900',
+        color: "#5827A4",
+        textAlign: "center",
+        fontWeight: "900",
         fontSize: 16,
-        textTransform: 'uppercase'
+        textTransform: "uppercase"
     }
 })
